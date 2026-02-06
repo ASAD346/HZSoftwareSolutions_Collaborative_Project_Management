@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CollabProject - Manage Projects Efficiently</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Navigation -->
+        <nav id="navbar" class="hidden">
+            <div class="logo">
+                <i class="fa-solid fa-layer-group"></i> CollabProject
+            </div>
+            <div class="nav-links">
+                <span id="user-display">Using as User</span>
+                <button id="logout-btn" class="btn btn-secondary">Logout</button>
+            </div>
+        </nav>
+
+        <!-- Auth Pages -->
+        <div id="auth-container" class="view active">
+            <div class="auth-box">
+                <div class="logo-large">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <h1>CollabProject</h1>
+                </div>
+                
+                <!-- Login Form -->
+                <form id="login-form">
+                    <h2>Welcome Back</h2>
+                    <div class="input-group">
+                        <i class="fa-regular fa-envelope"></i>
+                        <input type="email" id="login-email" placeholder="Email Address" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Log In</button>
+                    <p class="switch-auth">Don't have an account? <span id="show-register">Sign Up</span></p>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" class="hidden">
+                    <h2>Create Account</h2>
+                    <div class="input-group">
+                        <i class="fa-regular fa-user"></i>
+                        <input type="text" id="reg-username" placeholder="Username" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-regular fa-envelope"></i>
+                        <input type="email" id="reg-email" placeholder="Email Address" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="reg-password" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
+                    <p class="switch-auth">Already have an account? <span id="show-login">Log In</span></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view hidden">
+            <header class="page-header">
+                <h2>My Projects</h2>
+                <button id="new-project-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Project</button>
+            </header>
+            
+            <div id="projects-grid" class="projects-grid">
+                <!-- Projects will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Project Board View -->
+        <div id="board-view" class="view hidden">
+            <header class="board-header">
+                <div class="board-info">
+                    <button id="back-to-dashboard" class="btn btn-icon"><i class="fa-solid fa-arrow-left"></i></button>
+                    <h2 id="board-title">Project Name</h2>
+                </div>
+                <div class="board-actions">
+                   <!-- <button class="btn btn-secondary">Members</button> -->
+                </div>
+            </header>
+            
+            <div class="board-canvas">
+                <div id="board-columns" class="board-columns">
+                    <!-- Columns and Tasks will be loaded here -->
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        
+        <!-- Create Project Modal -->
+        <div id="create-project-modal" class="modal hidden">
+            <div class="modal-header">
+                <h3>New Project</h3>
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="create-project-form">
+                <div class="form-group">
+                    <label>Project Name</label>
+                    <input type="text" id="new-project-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="new-project-desc"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Project</button>
+            </form>
+        </div>
+
+        <!-- Task Details Modal -->
+        <div id="task-modal" class="modal hidden">
+            <div class="modal-header">
+                <h3 id="modal-task-title">Task Title</h3>
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-task-desc" class="task-desc">Description goes here...</p>
+                <div class="task-meta">
+                    <span id="modal-task-assignee" class="badge">Unassigned</span>
+                    <span id="modal-task-date" class="badge">No Date</span>
+                </div>
+                
+                <div class="comments-section">
+                    <h4>Comments</h4>
+                    <div id="comments-list" class="comments-list">
+                        <!-- Comments -->
+                    </div>
+                    <form id="comment-form">
+                        <input type="text" id="new-comment-input" placeholder="Write a comment..." required>
+                        <button type="submit" class="btn btn-sm btn-primary">Send</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Task Modal -->
+        <div id="create-task-modal" class="modal hidden">
+             <div class="modal-header">
+                <h3>Add New Task</h3>
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="create-task-form">
+                <input type="hidden" id="new-task-column-id">
+                <div class="form-group">
+                    <label>Task Title</label>
+                    <input type="text" id="new-task-title" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="new-task-desc"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Task</button>
+            </form>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
