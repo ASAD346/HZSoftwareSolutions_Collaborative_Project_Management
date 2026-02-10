@@ -6,7 +6,7 @@ exports.addComment = async (req, res) => {
         if (!task_id || !content) return res.status(400).json({ message: 'Task ID and content required' });
 
         await db.query(
-            'INSERT INTO comments (task_id, user_id, content) VALUES (?, ?, ?)',
+            'INSERT INTO pm_comments (task_id, user_id, content) VALUES ($1, $2, $3)',
             [task_id, req.user.id, content]
         );
 
@@ -18,11 +18,11 @@ exports.addComment = async (req, res) => {
 
 exports.getTaskComments = async (req, res) => {
     try {
-        const [comments] = await db.query(`
+        const { rows: comments } = await db.query(`
             SELECT c.*, u.username 
-            FROM comments c 
-            JOIN users u ON c.user_id = u.id 
-            WHERE c.task_id = ? 
+            FROM pm_comments c 
+            JOIN pm_users u ON c.user_id = u.id 
+            WHERE c.task_id = $1 
             ORDER BY c.created_at ASC
         `, [req.params.taskId]);
 

@@ -26,13 +26,18 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/comments', commentRoutes);
 
 // Serve static assets
+// Serve static assets (for local dev mostly)
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-app.get(/.*/, (req, res) => {
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
 });
 
 // Start Server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+
+module.exports = app;

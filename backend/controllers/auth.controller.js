@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
@@ -11,8 +11,8 @@ exports.register = async (req, res) => {
         }
 
         // Check if user exists
-        const [existingUsers] = await db.query(
-            'SELECT * FROM users WHERE email = ? OR username = ?',
+        const { rows: existingUsers } = await db.query(
+            'SELECT * FROM pm_users WHERE email = $1 OR username = $2',
             [email, username]
         );
 
@@ -25,12 +25,12 @@ exports.register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Insert user
-        const [result] = await db.query(
-            'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+        const { rows: result } = await db.query(
+            'INSERT INTO pm_users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id',
             [username, email, hashedPassword]
         );
 
-        res.status(201).json({ message: 'User registered successfully', userId: result.insertId });
+        res.status(201).json({ message: 'User registered successfully', userId: result[0].id });
 
     } catch (error) {
         console.error(error);
@@ -47,7 +47,7 @@ exports.login = async (req, res) => {
         }
 
         // Check user
-        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        const { rows: users } = await db.query('SELECT * FROM pm_users WHERE email = $1', [email]);
 
         if (users.length === 0) {
             return res.status(400).json({ message: 'Invalid credentials' });

@@ -5,13 +5,13 @@ exports.getAllProjects = async (req, res) => {
         // Get projects where user is owner or member
         const query = `
             SELECT p.*, u.username as owner_name 
-            FROM projects p 
-            JOIN users u ON p.owner_id = u.id
-            LEFT JOIN project_members pm ON p.id = pm.project_id
-            WHERE p.owner_id = ? OR pm.user_id = ?
-            GROUP BY p.id
+            FROM pm_projects p 
+            JOIN pm_users u ON p.owner_id = u.id
+            LEFT JOIN pm_project_members pm ON p.id = pm.project_id
+            WHERE p.owner_id = $1 OR pm.user_id = $2
+            GROUP BY p.id, u.username
         `;
-        const [projects] = await db.query(query, [req.user.id, req.user.id]);
+        const { rows: projects } = await db.query(query, [req.user.id, req.user.id]);
         res.json(projects);
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
@@ -24,27 +24,28 @@ exports.createProject = async (req, res) => {
 
         if (!name) return res.status(400).json({ message: 'Name is required' });
 
-        const [result] = await db.query(
-            'INSERT INTO projects (name, description, owner_id) VALUES (?, ?, ?)',
+        const { rows: result } = await db.query(
+            'INSERT INTO pm_projects (name, description, owner_id) VALUES ($1, $2, $3) RETURNING id',
             [name, description, req.user.id]
         );
+        const projectId = result[0].id;
 
         // Add owner as a member with 'admin' role
         await db.query(
-            'INSERT INTO project_members (project_id, user_id, role) VALUES (?, ?, ?)',
-            [result.insertId, req.user.id, 'admin']
+            'INSERT INTO pm_project_members (project_id, user_id, role) VALUES ($1, $2, $3)',
+            [projectId, req.user.id, 'admin']
         );
 
         // Create default columns
         const defaultColumns = ['To Do', 'In Progress', 'Done'];
         for (let i = 0; i < defaultColumns.length; i++) {
             await db.query(
-                'INSERT INTO columns (project_id, name, order_index) VALUES (?, ?, ?)',
-                [result.insertId, defaultColumns[i], i]
+                'INSERT INTO pm_columns (project_id, name, order_index) VALUES ($1, $2, $3)',
+                [projectId, defaultColumns[i], i]
             );
         }
 
-        res.status(201).json({ message: 'Project created', projectId: result.insertId });
+        res.status(201).json({ message: 'Project created', projectId: projectId });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
@@ -53,12 +54,12 @@ exports.createProject = async (req, res) => {
 
 exports.getProjectDetails = async (req, res) => {
     try {
-        const [project] = await db.query('SELECT * FROM projects WHERE id = ?', [req.params.id]);
+        const { rows: project } = await db.query('SELECT * FROM pm_projects WHERE id = $1', [req.params.id]);
         if (project.length === 0) return res.status(404).json({ message: 'Project not found' });
 
         // Check access
-        const [member] = await db.query(
-            'SELECT * FROM project_members WHERE project_id = ? AND user_id = ?',
+        const { rows: member } = await db.query(
+            'SELECT * FROM pm_project_members WHERE project_id = $1 AND user_id = $2',
             [req.params.id, req.user.id]
         );
 
@@ -66,12 +67,12 @@ exports.getProjectDetails = async (req, res) => {
             return res.status(403).json({ message: 'Access denied' });
         }
 
-        const [columns] = await db.query('SELECT * FROM columns WHERE project_id = ? ORDER BY order_index', [req.params.id]);
-        const [tasks] = await db.query(`
+        const { rows: columns } = await db.query('SELECT * FROM pm_columns WHERE project_id = $1 ORDER BY order_index', [req.params.id]);
+        const { rows: tasks } = await db.query(`
             SELECT t.*, u.username as assignee_name 
-            FROM tasks t 
-            LEFT JOIN users u ON t.assignee_id = u.id 
-            WHERE t.project_id = ?
+            FROM pm_tasks t 
+            LEFT JOIN pm_users u ON t.assignee_id = u.id 
+            WHERE t.project_id = $1
         `, [req.params.id]);
 
         res.json({ project: project[0], columns, tasks });
